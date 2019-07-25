@@ -21,18 +21,17 @@ module.exports = {
 
     getShopList: async req =>{
         let r = await new Parse.Query('shop').find()
-        // console.log("r[0]",r[0])
-        //console.log(r)   
-          
-        let idarr = r.map((x,index)=>{    //取出id idarr
-            return x.id
-        })
-        console.log("idarr:",idarr) 
-        return idarr
-
-        // return r.map(x => x._toFullJSON())
+        return r.map(x=>x._toFullJSON())
     },
 
+    getShopList_avrhighest: async req =>{
+        let r = await new Parse.Query('shop').descending('price').find()   //因为price是字符串所以排序不是按照数字大小排
+        return r.map(x=>x._toFullJSON())
+    },
+    getShopList_avrlowest: async req =>{
+        let r = await new Parse.Query('shop').ascending('price').find()  
+        return r.map(x=>x._toFullJSON())
+    },
 
     uploadShop: req =>{    //商家上传 新建商家信息
 
@@ -40,6 +39,7 @@ module.exports = {
         let p = req.params
 
         console.log('uploadedParams:',p)
+        console.log("type:",typeof(Number(p.price)))
 
 
         return shop.set({
@@ -48,9 +48,11 @@ module.exports = {
 			openTime:p.openTime,
 			closeTime:p.closeTime,
             region:p.region,
-            address:p.address
+            address:p.address,
+            price:Number(p.price)
             
         }).save()
+        
 
         //console.log(shopInfo.shopName)
     }
