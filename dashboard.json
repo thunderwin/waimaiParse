@@ -2,9 +2,9 @@
   "apps": [
     {
       "serverURL": "http://localhost:1337/parse",
-      "appId": "thousandcountry",
+      "appId": "waimai",
       "masterKey": "thousandcountryIloveyou",
-      "appName": "thousandcountry"
+      "appName": "waimai"
     }
   ]
 }
