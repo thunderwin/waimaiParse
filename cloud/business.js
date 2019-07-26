@@ -49,7 +49,8 @@ module.exports = {
 			closeTime:p.closeTime,
             region:p.region,
             address:p.address,
-            price:Number(p.price)
+            price:Number(p.price),
+            shopTagList:p.shopTagList
             
         }).save()
         
