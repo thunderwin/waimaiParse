@@ -25,11 +25,13 @@ module.exports = {
     },
 
     getShopList_avrhighest: async req =>{
-        let r = await new Parse.Query('shop').descending('price').find()   
+        let r = await new Parse.Query('shop').descending('price').find()  
+        console.log("r.map(x=>x._toFullJSON())::::",r.map(x=>x._toFullJSON()))
         return r.map(x=>x._toFullJSON())
     },
     getShopList_avrlowest: async req =>{
         let r = await new Parse.Query('shop').ascending('price').find()  
+        //console.log("rrrrrr:",r)
         return r.map(x=>x._toFullJSON())
     },
     getShopList_tagFiltered: async req =>{
@@ -52,10 +54,6 @@ module.exports = {
             return x.shopTagList
         })
 
-
-
-
-
         console.log("allShopTagArr:",allShopTagArr)
         console.log("customerTags:",customerTags)   //tagsArr: [ 0, 4, 1, 2, 3 ]
         
@@ -74,11 +72,21 @@ module.exports = {
             for (var i = 0 ;i < customerTags.length;i++) {
                 if(thisShopTag.indexOf(customerTags[i]) < 0) 
                 isContained = false;
-                console.log("res:",isContained)
             }
             if(isContained == true){isContainedList.push(index)}        
         }
         console.log("isContainedList:",isContainedList)
+        let sortedShops = []
+
+        for(let j of isContainedList){
+            console.log("resultShopItemId:",allShopArr[j])
+            sortedShops.push(allShopArr[j])
+        }
+        
+        console.log("sortedShops:",sortedShops)
+        return sortedShops
+        
+
 
 
         
@@ -94,7 +102,7 @@ module.exports = {
         let p = req.params
 
         console.log('uploadedParams:',p)
-        console.log("type:",typeof(Number(p.price)))
+        console.log("price_type:",typeof(Number(p.price)))
 
 
         return shop.set({
