@@ -26,7 +26,7 @@ module.exports = {
 
     getShopList_avrhighest: async req =>{
         let r = await new Parse.Query('shop').descending('price').find()  
-        console.log("r.map(x=>x._toFullJSON())::::",r.map(x=>x._toFullJSON()))
+        //console.log("r.map(x=>x._toFullJSON())::::",r.map(x=>x._toFullJSON()))
         return r.map(x=>x._toFullJSON())
     },
     getShopList_avrlowest: async req =>{
@@ -34,6 +34,69 @@ module.exports = {
         //console.log("rrrrrr:",r)
         return r.map(x=>x._toFullJSON())
     },
+
+    getShopList_tag_sort: async req =>{   //既有人均排序又有tag过滤
+        let p = req.params
+        let resarr = []
+
+        console.log("tag_sort_params:",p)
+
+        let customerTags = []
+        for(let key in p){
+            if(key != 'sortType'){customerTags.push(Number(p[key]))}
+        }
+        let shopInfos = await new Parse.Query('shop').find()
+        let allShopArr = shopInfos.map(x=>x._toFullJSON())
+        let allShopTagArr = allShopArr.map(x =>{     //所有商家tag列表的列表
+            return x.shopTagList
+        })
+        let isContainedList = []    //满足要求的商家列表
+
+        for(index in allShopArr){
+            let isContained = true      //比较customerTag是否为shopTag的子集
+            let thisShopTag = allShopTagArr[index]
+            for (var i = 0 ;i < customerTags.length;i++) {
+                if(thisShopTag.indexOf(customerTags[i]) < 0) 
+                isContained = false;
+            }
+            if(isContained == true){isContainedList.push(index)}        
+        }
+        let sortedShops = []  //结果列表
+
+        for(let j of isContainedList){
+            console.log("resultShopItemId:",allShopArr[j])
+            sortedShops.push(allShopArr[j])
+        }
+        
+        console.log("sortedShops:",sortedShops)
+
+
+        function compare(property,type){   //封装排序函数
+            return function(obj1,obj2){
+                var value1 = obj1[property]
+                var value2 = obj2[property]
+                if(type == 0){
+                    return value1 - value2    // 升序
+                }else if(type == 1){
+                    return value2 - value1
+                }
+                
+            }
+        }
+        if(p.sortType == 'avr_highest'){   //tag过滤之后价格从高往低排
+            resarr = sortedShops.sort(compare("price",1)) 
+        }else if(p.sortType == 'avr_lowest'){   //tag过滤之后价格从低往高排
+            resarr = sortedShops.sort(compare("price",0))
+        }else if(p.sortType == 'rating'){  //tag过滤之后按照评分排序
+            console.log("rating...")
+        }
+
+        console.log("resarr:",resarr)
+        return resarr
+
+        
+    },
+
     getShopList_tagFiltered: async req =>{
         let p = req.params
         console.log("rrrrrrForTag:",p)
@@ -85,14 +148,6 @@ module.exports = {
         
         console.log("sortedShops:",sortedShops)
         return sortedShops
-        
-
-
-
-        
-
-
-
 
     },
 
@@ -116,9 +171,7 @@ module.exports = {
             shopTagList:p.shopTagList
             
         }).save()
-        
-
-        //console.log(shopInfo.shopName)
+               //console.log(shopInfo.shopName)
     }
     
 
