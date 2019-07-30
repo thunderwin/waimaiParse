@@ -149,17 +149,104 @@ module.exports = {
         const shopList = await query.find();
         let temp = shopList.map(x=>x._toFullJSON())
         let tempO = temp[2]
-        // console.log(tempO.objectId)
+        //console.log(tempO.objectId)
         //console.log(tempO)
+
+        
+        let shopPLeadTo = await new Parse.Query('mapShopCatgItem').include('shopPointer').find()
+        let shoprr = shopPLeadTo.map(x=>x._toFullJSON()) //拿到中间表所指向的shopList所有信息 其objectId为中间表的id
+        let catgLeadTo = [] //拿到中间表某个shopList对应的categorypointer
+        let itemLeadTo = [] //拿到中间表某个shopList对应的itempointer
+        for(let key in shoprr){
+            if(shoprr[key].shopPointer.objectId == tempO.objectId){
+                    var catgLead = await new Parse.Query('mapShopCatgItem').include('categoryPointer')
+                        .equalTo('objectId',shoprr[key].objectId).find()
+                    var itemLead = await new Parse.Query('mapShopCatgItem').include('itemPointer')
+                        .equalTo('objectId',shoprr[key].objectId).find()
+                itemLeadTo.push.apply(itemLeadTo,itemLead)    
+                catgLeadTo.push.apply(catgLeadTo,catgLead)
+            }
+        }
+        // console.log("&&&&&&&&&&&&",catgLeadTo)
+        let catgrr = catgLeadTo.map(x=>x._toFullJSON())
+        // console.log("$$$$$$$$$$$$",itemLeadTo)
+        let itemrr = itemLeadTo.map(x=>x._toFullJSON())
+
+
+        let shopMenuList = []
+        for(let catgKey in catgrr){
+            let shopMenu = {}
+            if(catgrr[catgKey].categoryPointer.catgStatus==0)
+                continue
+            else{
+                shopMenu.id =  catgrr[catgKey].categoryPointer.catgPosition
+                shopMenu.name = catgrr[catgKey].categoryPointer.categoryName
+                shopMenu.objectId = catgrr[catgKey].categoryPointer.objectId
+                if(shopMenuList.length==0)
+                    shopMenuList.push(shopMenu)
+                else{
+                    let flag = true
+                    for(let key in shopMenuList){
+                        if(shopMenu.objectId == shopMenuList[key].objectId)
+                            flag = false
+                    }
+                    if(flag) shopMenuList.push(shopMenu)
+                }
+            }
+        }
+        
+        var by = function (prop) {
+            return function(obj1, obj2) {
+                var val1 = obj1[prop];
+                var val2 = obj2[prop];
+                if (val1 < val2) return -1;
+                else if (val1 > val2) return 1;
+                else return 0; 
+            } 
+        }
+        shopMenuList.sort(by("id"));
+        console.log("*********",shopMenuList)
+
+        
+        for(let key in shopMenuList){
+            let items = []
+            for(let itemKey in itemrr){
+                let item = {}
+                if(itemrr[itemKey].itemPointer.itemStatus==0)
+                    continue
+                else{
+                    if(itemrr[itemKey].categoryPointer.objectId==shopMenuList[key].objectId){
+                        item.itemName =  itemrr[itemKey].itemPointer.itemName
+                        item.itemPrice = itemrr[itemKey].itemPointer.itemPrice
+                        items.push(item)
+                    }
+                }
+            }
+            shopMenuList[key].items=items
+        }
+        for(let j in shopMenuList){
+            console.log("?????????",shopMenuList[j])
+        }
+        console.log("!!!!!!!!!!!",shopMenuList)
+        return shopMenuList
+
+        let q = new Parse.Query('mapShopCatgItem')
+        let qq = await q.get("i4A5OXlpN1")
+        //ParseObject { _objCount: 26, className: 'mapShopCatgItem', id: 'i4A5OXlpN1' }
+        console.log("+++++++++++",qq)
+        let pointone = await qq.get('categoryPointer')._toFullJSON() //{ objectId: 'HD934XIHqS', __type: 'Object', className: 'Items' }
+        //ParseObject { _objCount: 29, className: 'Items', id: 'HD934XIHqS' }
+        //let pt = pointone.get('itemName')
+        console.log("************",pointone)
+        let catgQuery = await new Parse.Query('Categories').equalTo('objectId',pointone.objectId).find()
+        let catgObj = catgQuery[0]._toFullJSON()
+        console.log("/////////////",catgQuery[0]._toFullJSON())
+        
+
+
 
 
         let r = await new Parse.Query('mapShopCatgItem').find()
-
-        const q = new Parse.Query('mapShopCatgItem')
-        let qq = await q.include("itemPointer").find()
-
-
-        console.log("************",qq)
         //console.log(r.map(x=>x._toFullJSON())) 
         let rr = r.map(x=>x._toFullJSON())
         var getCategoryPointer = []
@@ -178,46 +265,46 @@ module.exports = {
             console.log(x)
         }
 
-        let shopMenuList = []
-        let catr = await new Parse.Query('Categories').find()
-        let catrr = catr.map(x=>x._toFullJSON())
-        let itemr = await new Parse.Query('Items').find()
-        let itemrr = itemr.map(x=>x._toFullJSON())
-        for(let x of getCategoryPointer){ 
-            for (let key in catrr){
-                if(catrr[key].objectId == x && catrr[key].catgStatus == 1){
-                    let shopMenu = {}
-                    shopMenu.id =  catrr[key].catgPosition
-                    shopMenu.name = catrr[key].categoryName
-                    // for(let index in itemrr){
-                    //     if(itemrr[index].itToCatPointer.objectId == x && itemrr[index].itemStatus == 1){
-                    //         let items = []
-                    //         items.itemId = itemrr[index].itemPosition
-                    //         items.itemName = itemrr[index].itemName
-                    //         items.itemPrice = itemrr[index].itemPrice
-                    //         console.log("----------",items)
-                    //         shopMenu.items = items
-                    //     }
-                    // }
-                    shopMenuList.push(shopMenu)
-                }
-            }
-        }
-        var by = function (prop) {
-            return function(obj1, obj2) {
-                var val1 = obj1[prop];
-                var val2 = obj2[prop];
-                if (val1 < val2) {
-                    return -1;
-                } else if (val1 > val2) {
-                    return 1;
-                } else {
-                    return 0;
-                }            
-            }
-        }
-        shopMenuList.sort(by("id"));
-        console.log("+++++++++++",shopMenuList)
+        // let shopMenuList = []
+        // let catr = await new Parse.Query('Categories').find()
+        // let catrr = catr.map(x=>x._toFullJSON())
+        // // let itemr = await new Parse.Query('Items').find()
+        // // let itemrr = itemr.map(x=>x._toFullJSON())
+        // for(let x of getCategoryPointer){ 
+        //     for (let key in catrr){
+        //         if(catrr[key].objectId == x && catrr[key].catgStatus == 1){
+        //             let shopMenu = {}
+        //             shopMenu.id =  catrr[key].catgPosition
+        //             shopMenu.name = catrr[key].categoryName
+        //             // for(let index in itemrr){
+        //             //     if(itemrr[index].itToCatPointer.objectId == x && itemrr[index].itemStatus == 1){
+        //             //         let items = []
+        //             //         items.itemId = itemrr[index].itemPosition
+        //             //         items.itemName = itemrr[index].itemName
+        //             //         items.itemPrice = itemrr[index].itemPrice
+        //             //         console.log("----------",items)
+        //             //         shopMenu.items = items
+        //             //     }
+        //             // }
+        //             shopMenuList.push(shopMenu)
+        //         }
+        //     }
+        // }
+        // var by = function (prop) {
+        //     return function(obj1, obj2) {
+        //         var val1 = obj1[prop];
+        //         var val2 = obj2[prop];
+        //         if (val1 < val2) {
+        //             return -1;
+        //         } else if (val1 > val2) {
+        //             return 1;
+        //         } else {
+        //             return 0;
+        //         }            
+        //     }
+        // }
+        // shopMenuList.sort(by("id"));
+        // console.log("+++++++++++",shopMenuList)
 
 
         // var getCategoryName = []
@@ -235,16 +322,6 @@ module.exports = {
         return(shopList.map(x=>x._toFullJSON()))
 
         
-        for(let key in shopList){
-            console.log(Json.stringify(shopList[6]))
-            console.log("++++++++++",shopList[6].get("shopToMap"))
-            let tempPointer =shopList[6].get("ItemPointer")
-            console.log(JSON.stringify(tempPointer.get("bala")))
-        }
-        var user = Parse.User.current();
-        var relation = user.relation("likes");
-        relation.add(post);
-        user.save();
     }, 
 
 
