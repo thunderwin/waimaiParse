@@ -1,6 +1,7 @@
 let Parse = require('parse/node');
 const MapTagBusiness = Parse.Object.extend('MapTagBusiness')
-const Shop = Parse.Object.extend("shop")
+const Shop = Parse.Object.extend("Shop")
+// const MapShopCategory = Parse.Object.extend("Category")
 
 module.exports = {
     getBusiness : req => {    //获得商家信息
@@ -18,20 +19,44 @@ module.exports = {
        })
 
     },
+    uploadShop: req =>{    //商家上传 新建商家信息
+        // const Shop = Parse.Object.extend("shop")
 
-    getShopList: async req =>{
-        let r = await new Parse.Query('shop').find()
-        return r.map(x=>x._toFullJSON())
+        let shop = new Shop()   
+        let p = req.params
+
+        console.log('uploadedParams:',p)
+        console.log("price_type:",typeof(Number(p.price)))
+
+        let categoryId = 'QwfEQ3dZfS'  //test
+        let categoryPointer = Parse.Object.extend("Category").createWithoutData(categoryId)   //pointer
+
+        return shop.set({
+            shopName:p.shopName,
+			phoneNumber: p.phoneNumber,					
+			openTime:p.openTime,
+			closeTime:p.closeTime,
+            region:p.region,
+            address:p.address,
+            price:Number(p.price),
+            shopTagList:p.shopTagList,
+            category:categoryPointer
+            
+        }).save()
+               //console.log(shopInfo.shopName)
     },
 
+    getShopList: async req =>{
+        let r = await new Parse.Query('Shop').find()
+        return r.map(x=>x._toFullJSON())
+    },
+    
     getShopList_avrhighest: async req =>{
-        let r = await new Parse.Query('shop').descending('price').find()  
-        //console.log("r.map(x=>x._toFullJSON())::::",r.map(x=>x._toFullJSON()))
+        let r = await new Parse.Query('Shop').descending('price').find()  
         return r.map(x=>x._toFullJSON())
     },
     getShopList_avrlowest: async req =>{
-        let r = await new Parse.Query('shop').ascending('price').find()  
-        //console.log("rrrrrr:",r)
+        let r = await new Parse.Query('Shop').ascending('price').find()  
         return r.map(x=>x._toFullJSON())
     },
 
@@ -45,7 +70,7 @@ module.exports = {
         for(let key in p){
             if(key != 'sortType'){customerTags.push(Number(p[key]))}
         }
-        let shopInfos = await new Parse.Query('shop').find()
+        let shopInfos = await new Parse.Query('Shop').find()
         let allShopArr = shopInfos.map(x=>x._toFullJSON())
         let allShopTagArr = allShopArr.map(x =>{     //所有商家tag列表的列表
             return x.shopTagList
@@ -80,7 +105,7 @@ module.exports = {
                 }else if(type == 1){
                     return value2 - value1
                 }
-                
+
             }
         }
         if(p.sortType == 'avr_highest'){   //tag过滤之后价格从高往低排
@@ -108,7 +133,7 @@ module.exports = {
         }
         console.log("customerTags:",customerTags)   //tagsArr: [ 0, 4, 1, 2, 3 ]
 
-        let shopInfos = await new Parse.Query('shop').find()
+        let shopInfos = await new Parse.Query('Shop').find()
         console.log("shopTags:",shopInfos)
         console.log("allShopArr",shopInfos.map(x=>x._toFullJSON()))
         let allShopArr = shopInfos.map(x=>x._toFullJSON())
@@ -150,30 +175,6 @@ module.exports = {
         return sortedShops
 
     },
-
-    uploadShop: req =>{    //商家上传 新建商家信息
-
-        let shop = new Shop()   
-        let p = req.params
-
-        console.log('uploadedParams:',p)
-        console.log("price_type:",typeof(Number(p.price)))
-
-
-        return shop.set({
-            shopName:p.shopName,
-			phoneNumber: p.phoneNumber,					
-			openTime:p.openTime,
-			closeTime:p.closeTime,
-            region:p.region,
-            address:p.address,
-            price:Number(p.price),
-            shopTagList:p.shopTagList
-            
-        }).save()
-               //console.log(shopInfo.shopName)
-    }
-    
 
 
 }
