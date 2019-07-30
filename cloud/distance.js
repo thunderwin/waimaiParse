@@ -29,6 +29,7 @@ module.exports = {
         // query.near("location", userGeoPoint);
         query.withinKilometers("location", point, distance, sorted);
         // query.limit(3);
+        console.log(query._where.location.$maxDistance)
         const placesObjects = await query.find();
         console.log("placesObjects",placesObjects)
         let idarr = placesObjects.map((x,index)=>{    //取出id idarr
@@ -44,7 +45,7 @@ module.exports = {
                 }
             // }
         })
-        // console.log((placesObjects.map(x=>x._toFullJSON()))[0].shopName)
+        //console.log((placesObjects.map(x=>x._toFullJSON()))[0].shopName)
         //return placesObjects.map(x=>x._toFullJSON())
         let temp = placesObjects.map(x=>x._toFullJSON())
         let afterSortedShopList = []
@@ -81,6 +82,7 @@ module.exports = {
         for(let key in temp){
             //console.log(temp[key].shopName)
             var shop = {}
+            shop.objectId = temp[key].objectId
             shop.shopName = temp[key].shopName
             shop.url = temp[key].url
             shop.average = temp[key].average
@@ -144,21 +146,22 @@ module.exports = {
 
 
     leadToStoreHome: async req =>{
-        let ShopList = Parse.Object.extend("ShopList")
-        const query = new Parse.Query("ShopList")
-        const shopList = await query.find();
-        let temp = shopList.map(x=>x._toFullJSON())
-        let tempO = temp[2]
+        // let ShopList = Parse.Object.extend("ShopList")
+        // const query = new Parse.Query("ShopList")
+        // const shopList = await query.find();
+        // let temp = shopList.map(x=>x._toFullJSON())
+        // let tempO = temp[2]
         //console.log(tempO.objectId)
         //console.log(tempO)
-
+        let shopObjectId = req.params.bala
+        console.log("!!!!!!!!!!!!",shopObjectId)
         
         let shopPLeadTo = await new Parse.Query('mapShopCatgItem').include('shopPointer').find()
         let shoprr = shopPLeadTo.map(x=>x._toFullJSON()) //拿到中间表所指向的shopList所有信息 其objectId为中间表的id
         let catgLeadTo = [] //拿到中间表某个shopList对应的categorypointer
         let itemLeadTo = [] //拿到中间表某个shopList对应的itempointer
         for(let key in shoprr){
-            if(shoprr[key].shopPointer.objectId == tempO.objectId){
+            if(shoprr[key].shopPointer.objectId == shopObjectId.id){
                     var catgLead = await new Parse.Query('mapShopCatgItem').include('categoryPointer')
                         .equalTo('objectId',shoprr[key].objectId).find()
                     var itemLead = await new Parse.Query('mapShopCatgItem').include('itemPointer')
@@ -194,7 +197,7 @@ module.exports = {
                 }
             }
         }
-        
+        // 升序排序函数
         var by = function (prop) {
             return function(obj1, obj2) {
                 var val1 = obj1[prop];
@@ -228,6 +231,8 @@ module.exports = {
             console.log("?????????",shopMenuList[j])
         }
         console.log("!!!!!!!!!!!",shopMenuList)
+
+
         return shopMenuList
 
         let q = new Parse.Query('mapShopCatgItem')
